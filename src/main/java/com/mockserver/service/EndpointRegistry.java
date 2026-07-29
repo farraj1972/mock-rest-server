@@ -1,7 +1,10 @@
+package com.mockserver.service;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -57,6 +60,24 @@ public class EndpointRegistry {
                     "Loaded {} endpoint(s) from {}",
                     registry.size(),
                     CONFIG_FILE);
+
+          logConfiguration();
+     }
+
+     private void logConfiguration() {
+
+          logger.info("--------------------------------------------------");
+          logger.info("Configured endpoints ({})", registry.size());
+
+          registry.values().stream()
+                    .sorted(Comparator
+                              .comparing(EndpointDefinition::getMethod)
+                              .thenComparing(EndpointDefinition::getPath))
+                    .forEach(endpoint -> logger.info("  {}", String.format("%-6s %s",
+                              endpoint.getMethod(),
+                              endpoint.getPath())));
+
+          logger.info("--------------------------------------------------");
      }
 
      private void readConfiguration() {

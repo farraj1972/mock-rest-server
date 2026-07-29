@@ -1,44 +1,71 @@
 package com.mockserver.controller;
 
-import com.mockserver.util.ConsoleLogger;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import java.util.concurrent.TimeUnit;
 
-import java.util.Map;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.mockserver.model.EndpointDefinition;
+import com.mockserver.service.EndpointRegistry;
+import com.mockserver.util.ConsoleLogger;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 public class MockController {
 
-    @RequestMapping(
-            value = {"/", "/**"},
-            method = {
-                    RequestMethod.GET,
-                    RequestMethod.POST,
-                    RequestMethod.PUT,
-                    RequestMethod.PATCH,
-                    RequestMethod.DELETE
-            }
-    )
-    public ResponseEntity<Map<String, String>> handle(
-            HttpServletRequest request,
-            @RequestBody(required = false) String body) {
+    private final EndpointRegistry endpointRegistry;
 
-        long start = System.currentTimeMillis();
+    public MockController(EndpointRegistry endpointRegistry) {
+        this.endpointRegistry = endpointRegistry;
+    }
 
-        ResponseEntity<Map<String, String>> response =
-                ResponseEntity.ok(
-                        Map.of(
-                                "status",
-                                "OK"
-                        )
-                );
+    @RequestMapping("/**")
+    public ResponseEntity<String> handleRequest(HttpServletRequest request) {
 
-        ConsoleLogger.log(
+        long startTime = System.nanoTime();
+
+        EndpointDefinition endpoint = endpointRegistry.get(
+                request.getMethod(),
+                request.getRequestURI());
+
+        if (endpoint == null) {
+            return respond(
+                    request,
+                    HttpStatus.NOT_FOUND,
+                    """
+                    {
+                      "error": "Endpoint not configured"
+                    }
+                    """,
+                    startTime);
+        }
+
+        return respond(
                 request,
-                body,
-                System.currentTimeMillis() - start);
+                HttpStatus.OK,
+                """
+                {
+                  "status": "OK"
+                }
+                """,
+                startTime);
+    }
 
-        return response;
+    private ResponseEntity<String> respond(HttpServletRequest request,
+                                           HttpStatus status,
+                                           String body,
+                                           long startTime) {
+
+        long elapsed = TimeUnit.NANOSECONDS.toMillis(
+                System.nanoTime() - startTime);
+
+        ConsoleLogger.log(request, body, elapsed);
+
+        return ResponseEntity
+                .status(status)
+                .body(body);
     }
 }
