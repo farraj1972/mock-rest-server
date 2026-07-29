@@ -1,0 +1,1 @@
+Baseline A - Start with mvn spring-boot:run
