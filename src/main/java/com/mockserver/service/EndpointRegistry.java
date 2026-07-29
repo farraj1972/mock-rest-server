@@ -44,6 +44,7 @@ public class EndpointRegistry {
      private EndpointConfiguration configuration;
 
      private final Map<EndpointKey, EndpointDefinition> registry = new LinkedHashMap<>();
+     private final Map<String, EndpointDefinition> registryById = new LinkedHashMap<>();
 
      public EndpointRegistry(ObjectMapper objectMapper) {
           this.objectMapper = objectMapper;
@@ -123,9 +124,16 @@ public class EndpointRegistry {
 
           Set<EndpointKey> keys = new HashSet<>();
 
+          Set<String> ids = new HashSet<>();
+
           for (EndpointDefinition endpoint : configuration.getEndpoints()) {
 
                validateEndpoint(endpoint);
+               
+               if (!ids.add(endpoint.getId())) {
+                    throw new IllegalStateException(
+                              "Duplicate endpoint id: " + endpoint.getId());
+               }
 
                EndpointKey key = endpointKey(
                          endpoint.getMethod(),
@@ -171,13 +179,23 @@ public class EndpointRegistry {
      private void buildIndex() {
 
           registry.clear();
+          registryById.clear();
 
           for (EndpointDefinition endpoint : configuration.getEndpoints()) {
+
+               if (registryById.containsKey(endpoint.getId())) {
+                    throw new IllegalStateException(
+                              "Duplicate endpoint id: " + endpoint.getId());
+               }
 
                registry.put(
                          endpointKey(
                                    endpoint.getMethod(),
                                    endpoint.getPath()),
+                         endpoint);
+
+               registryById.put(
+                         endpoint.getId(),
                          endpoint);
           }
 
@@ -203,9 +221,71 @@ public class EndpointRegistry {
                               path));
      }
 
+     public EndpointDefinition get(String id, boolean required) {
+
+          EndpointDefinition endpoint = registryById.get(id);
+
+          if (required && endpoint == null) {
+               throw new IllegalArgumentException(
+                         "Endpoint not found: " + id);
+          }
+
+          return endpoint;
+     }
+
      public Collection<EndpointDefinition> getEndpoints() {
           return Collections.unmodifiableCollection(
                     registry.values());
+     }
+
+     public EndpointDefinition get(String method, String path, boolean required) {
+
+          EndpointDefinition endpoint = get(method, path);
+
+          if (required && endpoint == null) {
+               throw new IllegalArgumentException(
+                         "Endpoint not found: "
+                                   + normalizeMethod(method)
+                                   + " "
+                                   + normalizePath(path));
+          }
+
+          return endpoint;
+     }
+
+     public void updateForward(String id,
+               EndpointForward forward) {
+
+          EndpointDefinition endpoint = get(id, true);
+
+          endpoint.setForward(forward);
+
+          validateForward(endpoint);
+
+          logger.info("Forward updated: {}",
+                    endpoint.getId());
+     }
+
+     public void enableForward(String id) {
+
+          EndpointDefinition endpoint = get(id, true);
+
+          endpoint.getForward().setEnabled(true);
+
+          validateForward(endpoint);
+
+          logger.info("Forward enabled: {}",
+                    endpoint.getId());
+     }
+
+     public void disableForward(String id) {
+
+          EndpointDefinition endpoint = get(id, true);
+
+          endpoint.getForward().setEnabled(false);
+
+          logger.info("Forward disabled: {}",
+                    endpoint.getId());
      }
 
      public int size() {
@@ -264,7 +344,7 @@ public class EndpointRegistry {
           EndpointForward forward = endpoint.getForward();
 
           // if (forward == null) {
-          //      return;
+          // return;
           // }
 
           if (!forward.isEnabled()) {

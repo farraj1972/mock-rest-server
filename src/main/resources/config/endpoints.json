@@ -1,107 +1,81 @@
 {
   "endpoints": [
     {
+      "id": "customers-get",
       "method": "GET",
       "path": "/api/customers",
+      "status": 200,
+      "contentType": "application/json",
+      "responseFile": "responses/customers.json",
+      "delay": 0,
       "forward": {
         "enabled": false,
         "url": "http://localhost:8081"
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "body": [
-          {
-            "id": 1,
-            "name": "John Doe"
-          },
-          {
-            "id": 2,
-            "name": "Jane Smith"
-          }
-        ]
       }
     },
     {
+      "id": "customer-get",
       "method": "GET",
       "path": "/api/customers/{id}",
+      "status": 200,
+      "contentType": "application/json",
+      "responseFile": "responses/customer.json",
+      "delay": 0,
       "forward": {
         "enabled": false,
         "url": "http://localhost:8081"
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "id": 1,
-          "name": "John Doe"
-        }
       }
     },
     {
+      "id": "customer-create",
       "method": "POST",
       "path": "/api/customers",
+      "status": 201,
+      "contentType": "application/json",
+      "responseFile": "responses/customer-created.json",
+      "delay": 0,
       "forward": {
         "enabled": false,
         "url": "http://localhost:8081"
-      },
-      "response": {
-        "status": 201,
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "message": "Customer created successfully"
-        }
       }
     },
     {
+      "id": "customer-update",
       "method": "PUT",
       "path": "/api/customers/{id}",
+      "status": 200,
+      "contentType": "application/json",
+      "responseFile": "responses/customer-updated.json",
+      "delay": 0,
       "forward": {
         "enabled": false,
         "url": "http://localhost:8081"
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "message": "Customer updated successfully"
-        }
       }
     },
     {
+      "id": "customer-delete",
       "method": "DELETE",
       "path": "/api/customers/{id}",
+      "status": 204,
+      "contentType": "application/json",
+      "responseFile": null,
+      "delay": 0,
       "forward": {
         "enabled": false,
         "url": "http://localhost:8081"
-      },
-      "response": {
-        "status": 204,
-        "headers": {},
-        "body": null
       }
     },
     {
+      "id": "orders-get",
       "method": "GET",
       "path": "/api/orders",
+      "status": 200,
+      "contentType": "application/json",
+      "responseFile": "responses/orders.json",
+      "delay": 0,
       "forward": {
         "enabled": true,
-        "url": "https://jsonplaceholder.typicode.com"
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "body": []
+        "url": "http://localhost:8081"
       }
     }
   ]

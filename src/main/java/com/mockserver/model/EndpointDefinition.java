@@ -4,6 +4,8 @@ import java.util.Objects;
 
 public class EndpointDefinition {
 
+    private String id;
+    
     private String method;
 
     private String path;
@@ -62,6 +64,14 @@ public class EndpointDefinition {
 
     public void setForward(EndpointForward forward) {
         this.forward = forward;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
     
 }
