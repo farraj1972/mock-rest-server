@@ -11,50 +11,43 @@ import jakarta.servlet.http.HttpServletRequest;
 @Service
 public class RequestProcessor {
 
-    private final EndpointRegistry endpointRegistry;
+     private final EndpointRegistry endpointRegistry;
 
-    private final MockService mockService;
+     private final MockService mockService;
 
-    private final ProxyService proxyService;
+     private final ProxyService proxyService;
 
-    public RequestProcessor(EndpointRegistry endpointRegistry,
-                            MockService mockService,
-                            ProxyService proxyService) {
+     public RequestProcessor(EndpointRegistry endpointRegistry,
+               MockService mockService,
+               ProxyService proxyService) {
 
-        this.endpointRegistry = endpointRegistry;
-        this.mockService = mockService;
-        this.proxyService = proxyService;
-    }
+          this.endpointRegistry = endpointRegistry;
+          this.mockService = mockService;
+          this.proxyService = proxyService;
+     }
 
-    public ResponseEntity<String> process(HttpServletRequest request) {
+     public ResponseEntity<String> process(HttpServletRequest request) {
 
-        EndpointDefinition endpoint =
-                endpointRegistry.get(
-                        request.getMethod(),
-                        request.getRequestURI());
+          EndpointDefinition endpoint = endpointRegistry.get(
+                    request.getMethod(),
+                    request.getRequestURI());
 
-        if (endpoint == null) {
+          if (endpoint == null) {
 
-            return ResponseEntity
-                    .status(HttpStatus.NOT_FOUND)
-                    .body("""
-                          {
-                            "error": "Endpoint not configured"
-                          }
-                          """);
+               return ResponseEntity
+                         .status(HttpStatus.NOT_FOUND)
+                         .body("""
+                                   {
+                                     "error": "Endpoint not configured"
+                                   }
+                                   """);
+          }
 
-        }
+          if (endpoint.getForward().isEnabled()) {
+               return proxyService.execute(request, endpoint);
+          }
 
-        /*
-         * Foundation 1
-         *
-         * Proxy decision is intentionally hardcoded.
-         * Foundation 3 will replace this with:
-         *
-         * endpoint.getForward().isEnabled()
-         */
-
-        return mockService.execute(endpoint);
-    }
+          return mockService.execute(endpoint);
+     }
 
 }

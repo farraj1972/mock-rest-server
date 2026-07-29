@@ -2,6 +2,7 @@ package com.mockserver.service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mockserver.model.EndpointConfiguration;
 import com.mockserver.model.EndpointDefinition;
+import com.mockserver.model.EndpointForward;
 import com.mockserver.service.registry.EndpointKey;
 
 import jakarta.annotation.PostConstruct;
@@ -153,6 +155,8 @@ public class EndpointRegistry {
           String path = normalizePath(
                     endpoint.getPath());
 
+          validateForward(endpoint);
+
           if (!SUPPORTED_METHODS.contains(method)) {
                throw new IllegalStateException(
                          "Unsupported HTTP method: "
@@ -253,5 +257,30 @@ public class EndpointRegistry {
           }
 
           return normalized;
+     }
+
+     private void validateForward(EndpointDefinition endpoint) {
+
+          EndpointForward forward = endpoint.getForward();
+
+          // if (forward == null) {
+          //      return;
+          // }
+
+          if (!forward.isEnabled()) {
+               return;
+          }
+
+          if (forward.getUrl() == null || forward.getUrl().isBlank()) {
+               throw new IllegalStateException(
+                         "Forward URL is mandatory when forward is enabled.");
+          }
+
+          try {
+               URI.create(forward.getUrl());
+          } catch (IllegalArgumentException ex) {
+               throw new IllegalStateException(
+                         "Invalid forward URL: " + forward.getUrl(), ex);
+          }
      }
 }

@@ -2,15 +2,107 @@
   "endpoints": [
     {
       "method": "GET",
-      "path": "/hello"
+      "path": "/api/customers",
+      "forward": {
+        "enabled": false,
+        "url": "http://localhost:8081"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": [
+          {
+            "id": 1,
+            "name": "John Doe"
+          },
+          {
+            "id": 2,
+            "name": "Jane Smith"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/customers/{id}",
+      "forward": {
+        "enabled": false,
+        "url": "http://localhost:8081"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "id": 1,
+          "name": "John Doe"
+        }
+      }
     },
     {
       "method": "POST",
-      "path": "/orders"
+      "path": "/api/customers",
+      "forward": {
+        "enabled": false,
+        "url": "http://localhost:8081"
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "message": "Customer created successfully"
+        }
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/customers/{id}",
+      "forward": {
+        "enabled": false,
+        "url": "http://localhost:8081"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "message": "Customer updated successfully"
+        }
+      }
     },
     {
       "method": "DELETE",
-      "path": "/users"
+      "path": "/api/customers/{id}",
+      "forward": {
+        "enabled": false,
+        "url": "http://localhost:8081"
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body": null
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/orders",
+      "forward": {
+        "enabled": true,
+        "url": "https://jsonplaceholder.typicode.com"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": []
+      }
     }
   ]
 }

@@ -7,6 +7,8 @@ public class EndpointDefinition {
     private String method;
 
     private String path;
+ 
+    private EndpointForward forward = new EndpointForward();
 
     public EndpointDefinition() {
     }
@@ -53,4 +55,13 @@ public class EndpointDefinition {
     public String toString() {
         return method + " " + path;
     }
+
+    public EndpointForward getForward() {
+        return forward;
+    }
+
+    public void setForward(EndpointForward forward) {
+        this.forward = forward;
+    }
+    
 }
