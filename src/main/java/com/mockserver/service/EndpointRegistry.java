@@ -3,6 +3,10 @@ package com.mockserver.service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -30,7 +34,9 @@ public class EndpointRegistry {
 
      private static final Logger logger = LoggerFactory.getLogger(EndpointRegistry.class);
 
-     private static final String CONFIG_FILE = "config/endpoints.json";
+     private static final String CONFIG_RESOURCE = "config/endpoints.json";
+
+     private static final Path CONFIG_FILE = Path.of("config", "endpoints.json");
 
      private static final Set<String> SUPPORTED_METHODS = Set.of(
                "GET",
@@ -62,7 +68,7 @@ public class EndpointRegistry {
           logger.info(
                     "Loaded {} endpoint(s) from {}",
                     registry.size(),
-                    CONFIG_FILE);
+                    CONFIG_FILE.toAbsolutePath());
 
           logConfiguration();
      }
@@ -85,25 +91,61 @@ public class EndpointRegistry {
 
      private void readConfiguration() {
 
-          try (InputStream input = getClass()
-                    .getClassLoader()
-                    .getResourceAsStream(CONFIG_FILE)) {
+          ensureConfigurationFile();
 
-               if (input == null) {
-                    throw new IllegalStateException(
-                              "Configuration file not found: "
-                                        + CONFIG_FILE);
-               }
+          try {
 
                configuration = objectMapper.readValue(
-                         input,
+                         CONFIG_FILE.toFile(),
                          EndpointConfiguration.class);
 
           } catch (IOException ex) {
 
                throw new IllegalStateException(
                          "Unable to load configuration file: "
-                                   + CONFIG_FILE,
+                                   + CONFIG_FILE.toAbsolutePath(),
+                         ex);
+
+          }
+
+     }
+
+     private void ensureConfigurationFile() {
+
+          try {
+
+               if (Files.exists(CONFIG_FILE)) {
+                    return;
+               }
+
+               Files.createDirectories(CONFIG_FILE.getParent());
+
+               try (InputStream input = getClass()
+                         .getClassLoader()
+                         .getResourceAsStream(CONFIG_RESOURCE)) {
+
+                    if (input == null) {
+                         throw new IllegalStateException(
+                                   "Default configuration not found: "
+                                             + CONFIG_RESOURCE);
+                    }
+
+                    Files.copy(
+                              input,
+                              CONFIG_FILE,
+                              StandardCopyOption.REPLACE_EXISTING);
+
+                    logger.info(
+                              "Configuration created from default resource: {}",
+                              CONFIG_FILE.toAbsolutePath());
+
+               }
+
+          } catch (IOException ex) {
+
+               throw new IllegalStateException(
+                         "Unable to initialize configuration file: "
+                                   + CONFIG_FILE.toAbsolutePath(),
                          ex);
 
           }
@@ -129,7 +171,7 @@ public class EndpointRegistry {
           for (EndpointDefinition endpoint : configuration.getEndpoints()) {
 
                validateEndpoint(endpoint);
-               
+
                if (!ids.add(endpoint.getId())) {
                     throw new IllegalStateException(
                               "Duplicate endpoint id: " + endpoint.getId());
@@ -262,6 +304,8 @@ public class EndpointRegistry {
 
           validateForward(endpoint);
 
+          saveConfiguration();
+
           logger.info("Forward updated: {}",
                     endpoint.getId());
      }
@@ -274,6 +318,8 @@ public class EndpointRegistry {
 
           validateForward(endpoint);
 
+          saveConfiguration();
+
           logger.info("Forward enabled: {}",
                     endpoint.getId());
      }
@@ -283,13 +329,64 @@ public class EndpointRegistry {
           EndpointDefinition endpoint = get(id, true);
 
           endpoint.getForward().setEnabled(false);
-
+          saveConfiguration();
           logger.info("Forward disabled: {}",
                     endpoint.getId());
      }
 
      public int size() {
           return registry.size();
+     }
+
+     private void saveConfiguration() {
+
+          Path temporaryFile = Path.of(
+                    CONFIG_FILE.toString() + ".tmp");
+
+          try {
+
+               objectMapper
+                         .writerWithDefaultPrettyPrinter()
+                         .writeValue(
+                                   temporaryFile.toFile(),
+                                   configuration);
+
+               try {
+
+                    Files.move(
+                              temporaryFile,
+                              CONFIG_FILE,
+                              StandardCopyOption.REPLACE_EXISTING,
+                              StandardCopyOption.ATOMIC_MOVE);
+
+               } catch (AtomicMoveNotSupportedException ex) {
+
+                    logger.warn(
+                              "Atomic move not supported by file system. Falling back to regular move.");
+
+                    Files.move(
+                              temporaryFile,
+                              CONFIG_FILE,
+                              StandardCopyOption.REPLACE_EXISTING);
+               }
+
+               logger.info(
+                         "Configuration persisted: {}",
+                         CONFIG_FILE.toAbsolutePath());
+
+          } catch (IOException ex) {
+
+               try {
+                    Files.deleteIfExists(temporaryFile);
+               } catch (IOException ignored) {
+               }
+
+               throw new IllegalStateException(
+                         "Unable to persist configuration: "
+                                   + CONFIG_FILE.toAbsolutePath(),
+                         ex);
+          }
+
      }
 
      private EndpointKey endpointKey(
