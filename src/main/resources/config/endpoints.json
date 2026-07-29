@@ -1,0 +1,16 @@
+{
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/hello"
+    },
+    {
+      "method": "POST",
+      "path": "/orders"
+    },
+    {
+      "method": "DELETE",
+      "path": "/users"
+    }
+  ]
+}
