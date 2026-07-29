@@ -27,13 +27,13 @@ server, a transparent proxy or a hybrid virtualization platform.
 
 ## Foundations
 
-  Foundation   Description                  Status
------------- ---------------------------- --------
-  1            Core Request Processing      ✅
-  2            Forward Configuration        ✅
-  3            Transparent Proxy            ✅
-  4            Runtime Administration API   ✅
-  5            Persistent Configuration     ✅
+| Foundation | Description | Status |
+|------------|-------------|--------|
+| 1 | Core Request Processing | ✅ |
+| 2 | Forward Configuration | ✅ |
+| 3 | Transparent Proxy | ✅ |
+| 4 | Runtime Administration API | ✅ |
+| 5 | Persistent Configuration | ✅ |
 
 ## Quick Start
 
