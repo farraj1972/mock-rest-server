@@ -2,13 +2,11 @@ package com.mockserver.controller;
 
 import java.util.concurrent.TimeUnit;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.mockserver.model.EndpointDefinition;
-import com.mockserver.service.EndpointRegistry;
+import com.mockserver.service.RequestProcessor;
 import com.mockserver.util.ConsoleLogger;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,10 +14,10 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestController
 public class MockController {
 
-    private final EndpointRegistry endpointRegistry;
+    private final RequestProcessor requestProcessor;
 
-    public MockController(EndpointRegistry endpointRegistry) {
-        this.endpointRegistry = endpointRegistry;
+    public MockController(RequestProcessor requestProcessor) {
+        this.requestProcessor = requestProcessor;
     }
 
     @RequestMapping("/**")
@@ -27,45 +25,18 @@ public class MockController {
 
         long startTime = System.nanoTime();
 
-        EndpointDefinition endpoint = endpointRegistry.get(
-                request.getMethod(),
-                request.getRequestURI());
-
-        if (endpoint == null) {
-            return respond(
-                    request,
-                    HttpStatus.NOT_FOUND,
-                    """
-                    {
-                      "error": "Endpoint not configured"
-                    }
-                    """,
-                    startTime);
-        }
-
-        return respond(
-                request,
-                HttpStatus.OK,
-                """
-                {
-                  "status": "OK"
-                }
-                """,
-                startTime);
-    }
-
-    private ResponseEntity<String> respond(HttpServletRequest request,
-                                           HttpStatus status,
-                                           String body,
-                                           long startTime) {
+        ResponseEntity<String> response =
+                requestProcessor.process(request);
 
         long elapsed = TimeUnit.NANOSECONDS.toMillis(
                 System.nanoTime() - startTime);
 
-        ConsoleLogger.log(request, body, elapsed);
+        ConsoleLogger.log(
+                request,
+                response.getBody(),
+                elapsed);
 
-        return ResponseEntity
-                .status(status)
-                .body(body);
+        return response;
     }
+
 }
